@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+
+hou=pd.read_csv("housing.csv")
+
+hou.head(5)
+
+hou.info()
+
+hou.hist(bins=50, figsize=(20,15))
+plt.show
+
+from sklearn.model_selection import train_test_split
+train_set, test_set=train_test_split(hou, test_size=0.2, random_state=42)
+
+hou["income_cat"]=np.ceil(hou["median_income"]/1.5)
+hou["income_cat"].where(hou["income_cat"]<5, 5.0,inplace=True)
+
+from sklearn.model_selection import StratifiedShuffleSplit
+split=StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+for train_index,test_index in split.split(hou, hou["income_cat"]):
+    strat_train_set=hou.loc[train_index]
+    strat_test_set=hou.loc[test_index]
+hou["income_cat"].value_counts()/len(hou)
+for set in(strat_train_set, strat_test_set):
+    set.drop(["income_cat"],axis=1, inplace=True)
+hou=strat_train_set.copy()
+
+# # Visualizing
+hou.plot(kind="scatter",x="longitude",y="latitude",alpha=0.1)
+hou.plot(kind="scatter",x="longitude",y="latitude",alpha=0.4,s=hou["population"]/100,label="population",c="median_house_value",
+        cmap=plt.get_cmap("jet"),colorbar=True,)
+plt.legend()
+#calculating Correlation
+corr_matrix=hou.corr()
+corr_matrix["median_house_value"].sort_values(ascending=False)
+sns.heatmap(corr_matrix)
+hou.plot(kind="scatter",x="median_income",y="median_house_value",alpha=0.1)
+
+#.......to be continued
