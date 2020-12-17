@@ -45,3 +45,179 @@ sns.heatmap(corr_matrix)
 hou.plot(kind="scatter",x="median_income",y="median_house_value",alpha=0.1)
 
 #.......to be continued
+
+
+hou["rooms_per_household"]=hou["total_rooms"]/hou["households"]
+hou["bedrooms_per_room"]=hou["total_bedrooms"]/hou["total_rooms"]
+hou["population_per_household"]=hou["population"]/hou["households"]
+
+corr_matrix=hou.corr()
+corr_matrix["median_per_household"]=hou["population"]/hou["households"]
+
+
+hou=strat_train_set.drop("median_house_value",axis=1)
+housing_labels=strat_train_set["median_house_value"].copy()
+
+
+# # Data Cleaning
+
+median=hou["total_bedrooms"].median()
+
+
+from sklearn.impute import SimpleImputer
+imputer=SimpleImputer(strategy="median")
+hou_num=hou.drop("ocean_proximity",axis=1)
+
+
+imputer.fit(hou_num)
+imputer.statistics_
+
+hou_num.median().values
+
+X=imputer.transform(hou_num)
+
+hou_tr=pd.DataFrame(X,columns=hou_num.columns)
+
+
+#Handling Text and Categorical Attributes
+
+from sklearn.preprocessing import LabelEncoder
+encoder=LabelEncoder()
+housing_cat=hou["ocean_proximity"]
+housing_cat_encoded=encoder.fit_transform(housing_cat)
+housing_cat_encoded
+
+
+
+print(encoder.classes_)
+
+
+
+from sklearn.preprocessing import OneHotEncoder
+encoder=OneHotEncoder()
+housing_cat_1hot=encoder.fit_transform(housing_cat_encoded.reshape(-1,1))
+housing_cat_1hot
+
+housing_cat_1hot.toarray()
+
+from sklearn.preprocessing import LabelBinarizer
+encoder=LabelBinarizer()
+housing_cat_1hot=encoder.fit_transform(housing_cat)
+housing_cat_1hot
+
+
+# # Feature Scaling
+
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
+num_pipeline=Pipeline([('imputer',SimpleImputer(strategy="median")),('attribs_adder',CombinedAttributesAdder()),('str_scaller',StandardScaler()),])
+housing_num_tr=num_pipeline.fit_transform(housing_num)
+
+
+from sklearn.preprocessing import MinMaxScaler
+norm=MinMaxScaler().fit(hou_num)
+X_train_norm=norm.transform(hou_num)
+
+
+hou_num.head(2)
+
+
+# from sklearn.preprocessing import MinMaxScaler
+# norm=MinMaxScaler().fit(hou_num)
+# housing_num_tr=norm.transform(hou_num)
+
+housing_num_tr
+
+from sklearn.preprocessing import LabelEncoder 
+  
+le = LabelEncoder() 
+  
+hou['ocean_proximity']= le.fit_transform(hou['ocean_proximity']) 
+#data['Geography']= le.fit_transform(data['Geography']) 
+
+
+
+hou.head(5)
+
+
+# In[157]:
+
+
+# from sklearn.pipeline import FeatureUnion
+# num_attribs=list(hou_num)
+# cat_attribs=["ocean_proximity"]
+
+# num_pipeline=Pipeline([('selector',DataFrameSelector(num_attribs)),
+#                        ('imputer',Imputer(strategy="median")),
+#                        ('attribs_adder',CombinedAttributesAdder()),
+#                        ('std_scaler',StandardScaler()),
+#                       ])
+
+# cat_pipeline=Pipeline([('selector',DataFrameSelector(cat_attribs)),
+#                       ('label_binarizer',LabelBinarizer(),
+#                       )])
+
+# full_pipeline=FeatureUnion(transformer_list=[
+#     ("num_pipeline",num_pipeline),
+#     ("cat_pipeline",cat_pipeline)
+# ])
+
+hou.shape
+
+hou.isnull().sum()
+
+hou1=hou.fillna(method ='bfill') 
+
+
+sns.heatmap(hou1)
+
+hou1.isnull().sum()
+
+from sklearn.preprocessing import MinMaxScaler
+norm=MinMaxScaler().fit(hou1)
+X_train_norm=norm.transform(hou1)
+
+from sklearn.linear_model import LinearRegression
+lin_reg=LinearRegression()
+lin_reg.fit(hou1,housing_labels)
+
+
+from sklearn.metrics import mean_squared_error
+housing_pred=lin_reg.predict(hou1)
+lin_mse=mean_squared_error(housing_labels, housing_pred)
+lin_rmse=np.sqrt(lin_mse)
+lin_mse
+
+from sklearn.tree import DecisionTreeRegressor
+tree_reg=DecisionTreeRegressor()
+tree_reg.fit(hou1,housing_labels)
+
+
+pred=tree_reg.predict(hou1)
+tree_mse=mean_squared_error(housing_labels,pred)
+tree_rmse=np.sqrt(tree_mse)
+tree_rmse
+
+
+# # Using Cross Validation
+from sklearn.model_selection import cross_val_score
+scores=cross_val_score(tree_reg,hou1,housing_labels,scoring="neg_mean_squared_error",cv=10)
+rmse_scores=np.sqrt(-scores)
+
+def display_scores(scores):
+    print("Scores: ",scores)
+    print("Mean: ",scores.mean())
+    print("Standard deviation: ",scores.std())
+
+display_scores(rmse_scores)
+
+from sklearn.ensemble import RandomForestRegressor
+forest_reg=RandomForestRegressor()
+forest_reg.fit(hou1,housing_labels)
+
+pred=forest_reg.predict(hou1)
+forest_mse=mean_squared_error(housing_labels,pred)
+tree_rmse=np.sqrt(forest_mse)
+tree_rmse
+
