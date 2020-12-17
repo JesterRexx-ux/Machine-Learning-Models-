@@ -221,3 +221,5 @@ forest_mse=mean_squared_error(housing_labels,pred)
 tree_rmse=np.sqrt(forest_mse)
 tree_rmse
 
+
+#.......to be continued
